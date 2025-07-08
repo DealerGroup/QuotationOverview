@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation Information Display</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Neutral and Complementing Pastel color theme */
+        :root {
+            --color-primary-bg: #629BB5;
+            --color-secondary-bg: #C3DFE3;
+            --color-table-header-bg: #FFFFFF;
+            --color-sub-header-bg: #567C7D;
+            --color-table-row-odd: #B9D8E1;
+            --color-table-row-even: #E2F2EF;
+            --color-table-border: #B0E0E6;
+            --color-accent: #B0E0E6;
+            --color-highlight: #FFFFFF;
+            --color-text-dark: #2F4156;
+            --color-text-light: #CCCCCC;
+
+            /* Status Colors */
+            --color-status-on-time: #8BC34A; /* Pastel green */
+            --color-status-delayed: #FFC107; /* Pastel amber/orange */
+            --color-status-cancelled: #EF5350; /* Pastel red */
+            --color-status-boarding: #4FC3F7; /* Pastel light blue (used for 'In Progress') */
+            --color-status-in-fabrication: #E08C75; /* Changed to darker shade */
+            --color-status-on-hold: #D6C09D; /* Changed to darker shade */
+            --color-status-order: #E0A8A8; /* Changed to darker shade */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-primary-bg);
+            color: var(--color-text-dark);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 95%;
+            margin: auto;
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background-color: var(--color-secondary-bg);
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        .section-title {
+            color: var(--color-text-dark);
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        /* Container for side-by-side tables */
+        .two-column-tables-container {
+            display: grid;
+            grid-template-columns: 1fr; /* Default to single column on small screens */
+            gap: 2rem; /* Gap between tables */
+            margin-bottom: 4rem; /* Space below this section */
+        }
+        @media (min-width: 1024px) { /* On large screens, make it two columns */
+            .two-column-tables-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Styles for sections that include the title within their border */
+        .table-section-bordered {
+            border: 2px solid var(--color-table-border);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            background-color: var(--color-table-header-bg); /* Background for the whole section */
+            padding: 1.5rem; /* Padding inside the bordered box */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* General table styling (when inside a bordered section) */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent; /* Table background transparent to show parent's background */
+            border-radius: 0; /* No rounded corners on inner table */
+            overflow: hidden;
+            border: none; /* Remove default table border */
+            box-shadow: none; /* Remove default table shadow */
+        }
+        
+        /* Table cells and headers within any table */
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--color-table-border);
+            color: var(--color-text-dark);
+        }
+        th {
+            background-color: var(--color-sub-header-bg);
+            color: white; /* Explicitly set to white for readability on dark header */
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        tr:nth-child(odd) {
+            background-color: var(--color-table-row-odd);
+            color: var(--color-text-dark);
+        }
+        tr:nth-child(even) {
+            background-color: var(--color-table-row-even);
+            color: var(--color-text-dark);
+        }
+        tr:hover {
+            background-color: var(--color-accent);
+            color: var(--color-text-dark);
+        }
+        tr:hover th, tr:hover td {
+            color: var(--color-text-dark);
+        }
+        /* Ensure last row in any table doesn't have a bottom border if it's the last element in the table */
+        table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Status-specific classes */
+        .status-cell {
+            font-weight: bold;
+        }
+        .status-on-time { color: var(--color-status-on-time); }
+        .status-delayed { color: var(--color-status-delayed); }
+        .status-cancelled { color: var(--color-status-cancelled); }
+        .status-boarding { color: var(--color-status-boarding); }
+        .status-in-fabrication { color: var(--color-status-in-fabrication); } /* Updated */
+        .status-on-hold { color: var(--color-status-on-hold); } /* Updated */
+        .status-order { color: var(--color-status-order); } /* Updated */
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            .section-title {
+                font-size: 1.75rem;
+                margin-bottom: 1rem;
+            }
+            th, td {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+            }
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container rounded-lg">
+        <h1 class="text-4xl font-extrabold mb-8 text-center" style="color: var(--color-text-dark);">Quotation Information Display</h1>
+
+        <div class="two-column-tables-container">
+            <!-- Pending Quotation Table -->
+            <div class="table-section-bordered">
+                <h2 class="text-3xl section-title">Pending Quotation</h2>
+                <div class="table-responsive">
+                    <table id="pendingQuotationTable" class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th class="rounded-tl-lg">Client</th>
+                                <th>Project Name</th>
+                                <th>Engr.</th>
+                                <th class="rounded-tr-lg">Coor.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here by JavaScript -->
+                            <tr>
+                                <td colspan="4" class="text-center py-8 text-gray-500">Loading data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Order Status Table -->
+            <div class="table-section-bordered">
+                <h2 class="text-3xl section-title">Order Status</h2>
+                <div class="table-responsive">
+                    <table id="orderStatusTable" class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th class="rounded-tl-lg">Client</th>
+                                <th>Quote #</th>
+                                <th>Date Ordered</th>
+                                <th>Status</th>
+                                <th class="rounded-tr-lg">Fabricator</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here by JavaScript -->
+                            <tr>
+                                <td colspan="5" class="text-center py-8 text-gray-500">Loading data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Quotation Data Table -->
+        <div class="table-section-bordered">
+            <h2 class="text-3xl section-title">All Quotation Data</h2>
+            <div class="table-responsive">
+                <table id="allQuotationTable" class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="rounded-tl-lg">Client</th>
+                            <th>Project Name</th>
+                            <th>Status</th>
+                            <th>Engr.</th>
+                            <th>Coor.</th>
+                            <th>Brand</th>
+                            <th class="rounded-tr-lg">Quote#</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded here by JavaScript -->
+                        <tr>
+                            <td colspan="7" class="text-center py-8 text-gray-500">Loading data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="lastUpdated" class="text-sm text-gray-500 mt-8 text-center"></div>
+        <div id="errorMessage" class="text-red-400 text-center mt-4 hidden"></div>
+    </div>
+
+    <script>
+        // Define the Google Sheet CSV URL
+        // IMPORTANT: Please replace this with the *correct* public CSV URL of your Google Sheet.
+        // To get this URL:
+        // 1. Open your Google Sheet.
+        // 2. Go to File > Share > Publish to web.
+        // 3. In the "Link" tab, choose the sheet you want to publish and select "Comma-separated values (.csv)" for "Publish as".
+        // 4. Copy the generated URL. It should look similar to:
+        //    "https://docs.google.com/spreadsheets/d/e/{YOUR_SHEET_ID}/pub?gid={YOUR_GID}&single=true&output=csv"
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdxuPA2X-NQsefXyePu_KGoL45yPAgqXC0ixlx0_eYnUySW_gjJgC8I3pZJJ29nflciSVXL7M-YUbm/pub?gid=1383182578&single=true&output=csv";
+
+        // Define the columns for the "Pending Quotation" table
+        const PENDING_COLUMNS = [
+            { header: "Client", key: "Client" },
+            { header: "Project Name", key: "Project Name" },
+            { header: "Engr.", key: "Engr." },
+            { header: "Coor.", key: "Coor." }
+        ];
+
+        // Define the columns for the "Order Status" table
+        const ORDER_STATUS_COLUMNS = [
+            { header: "Client", key: "Client" },
+            { header: "Quote #", key: "Quote#" },
+            { header: "Date Ordered", key: "Date Ordered" },
+            { header: "Status", key: "Status" },
+            { header: "Fabricator", key: "Fabricator" }
+        ];
+
+        // Define the columns for the "All Quotation Data" table
+        const ALL_QUOTATION_COLUMNS = [
+            { header: "Client", key: "Client" },
+            { header: "Project Name", key: "Project Name" },
+            { header: "Status", key: "Status" },
+            { header: "Engr.", key: "Engr." },
+            { header: "Coor.", key: "Coor." },
+            { header: "Brand", key: "Brand" },
+            { header: "Quote#", key: "Quote#" }
+        ];
+
+        const ROWS_PER_PAGE_PAGINATED = 4; // Number of rows to display per page for Pending and Order Status tables
+        const ROWS_PER_PAGE_ALL_QUOTATION = 15; // Number of rows to display per page for All Quotation Data table
+        const PAGE_SWITCH_INTERVAL = 5000; // 5 seconds for page switching
+
+        // State objects for paginated tables
+        const pendingTableState = { data: [], currentPage: 0, totalPages: 0, intervalId: null };
+        const orderTableState = { data: [], currentPage: 0, totalPages: 0, intervalId: null };
+        const allQuotationTableState = { data: [], currentPage: 0, totalPages: 0, intervalId: null }; // New state for All Quotation Data
+
+        const pendingQuotationTableBody = document.querySelector('#pendingQuotationTable tbody');
+        const orderStatusTableBody = document.querySelector('#orderStatusTable tbody');
+        const allQuotationTableBody = document.querySelector('#allQuotationTable tbody');
+        const lastUpdatedDiv = document.getElementById('lastUpdated');
+        const errorMessageDiv = document.getElementById('errorMessage');
+
+        /**
+         * Fetches CSV data from the given URL.
+         * @param {string} url - The URL of the CSV file.
+         * @returns {Promise<string>} - A promise that resolves with the CSV text.
+         */
+        async function fetchCsvData(url) {
+            console.log("Attempting to fetch CSV from URL:", url); // Log the URL being fetched
+            try {
+                // Explicitly setting mode to 'cors' to ensure proper CORS handling
+                const response = await fetch(url, { mode: 'cors' }); 
+                if (!response.ok) {
+                    // Log more details if the HTTP response itself indicates an error
+                    console.error(`HTTP error! status: ${response.status}, text: ${response.statusText}`);
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText || 'Unknown error'}`);
+                }
+                return await response.text();
+            } catch (error) {
+                console.error("Error fetching CSV data:", error);
+                // Provide a more informative error message to the user
+                throw new Error(`Failed to fetch data. Please check your network connection and ensure the CSV URL is publicly accessible. Details: ${error.message}`);
+            }
+        }
+
+        /**
+         * Parses CSV text into an array of objects.
+         * The first row is assumed to be the header.
+         * @param {string} csvText - The CSV data as a string.
+         * @returns {Array<Object>} - An array of objects, where each object represents a row.
+         */
+        function parseCsv(csvText) {
+            const lines = csvText.trim().split('\n');
+            if (lines.length === 0) return [];
+
+            // Simple CSV parsing: split by comma, trim whitespace, handle quoted fields
+            const headers = lines[0].split(',').map(header => header.trim().replace(/^"|"$/g, ''));
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(value => value.trim().replace(/^"|"$/g, ''));
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] || ''; // Assign value or empty string if missing
+                });
+                data.push(row);
+            }
+            return data;
+        }
+
+        /**
+         * Renders data into a specified HTML table body based on provided columns.
+         * @param {HTMLElement} tableBody - The tbody element to render into.
+         * @param {Array<Object>} data - An array of row objects.
+         * @param {Array<Object>} columns - An array of column definitions ({ header: string, key: string }).
+         * @param {boolean} includeStatusStyling - Flag to apply status styling for the 'Status' column.
+         * @param {number} currentPage - The current page index (for pagination).
+         * @param {number} rowsPerPage - The number of rows to display per page.
+         */
+        function renderTable(tableBody, data, columns, includeStatusStylated = false, currentPage = 0, rowsPerPage = data.length) {
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            const startIndex = currentPage * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            let displayData = data.slice(startIndex, endIndex);
+
+            // Pad with blank rows if data is less than rowsPerPage
+            while (displayData.length < rowsPerPage) {
+                const blankRow = {};
+                columns.forEach(col => blankRow[col.key] = ''); // Create empty object for blank row
+                displayData.push(blankRow);
+            }
+
+            if (displayData.length === 0 && data.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="${columns.length}" class="text-center py-8 text-gray-500">No data available.</td>`;
+                tableBody.appendChild(row);
+                return;
+            }
+
+            displayData.forEach(rowData => {
+                const row = document.createElement('tr');
+                columns.forEach(col => {
+                    const cell = document.createElement('td');
+                    let cellValue = rowData[col.key] || ''; // Get value, default to empty string
+
+                    // Apply specific styling for the 'Status' column if enabled
+                    if (includeStatusStylated && col.key === 'Status') {
+                        cell.classList.add('status-cell');
+                        const statusLower = cellValue.toLowerCase();
+
+                        // Specific status colors
+                        if (statusLower.includes('in fabrication')) {
+                            cell.classList.add('status-in-fabrication');
+                        } else if (statusLower.includes('on hold')) {
+                            cell.classList.add('status-on-hold');
+                        } else if (statusLower.includes('order')) {
+                            cell.classList.add('status-order');
+                        }
+                        // Existing status colors
+                        else if (statusLower.includes('on time') || statusLower.includes('completed')) {
+                            cell.classList.add('status-on-time');
+                        } else if (statusLower.includes('delayed') || statusLower.includes('pending')) {
+                            cell.classList.add('status-delayed');
+                        } else if (statusLower.includes('cancelled') || statusLower.includes('rejected')) {
+                            cell.classList.add('status-cancelled');
+                        } else if (statusLower.includes('in progress') || statusLower.includes('boarding')) {
+                            cell.classList.add('status-boarding');
+                        }
+                    }
+                    cell.textContent = cellValue;
+                    row.appendChild(cell);
+                });
+                tableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Sets up pagination for a given table state.
+         * @param {Object} tableState - The state object for the table (data, currentPage, totalPages, intervalId).
+         * @param {HTMLElement} tableBody - The tbody element of the table.
+         * @param {Array<Object>} columns - Column definitions for the table.
+         * @param {boolean} includeStatusStyling - Whether to apply status styling.
+         * @param {number} rowsPerPageConfig - The number of rows to display per page for this specific table.
+         */
+        function setupPagination(tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig) {
+            // Clear any existing interval to prevent multiple loops
+            if (tableState.intervalId) {
+                clearInterval(tableState.intervalId);
+            }
+
+            tableState.totalPages = Math.ceil(tableState.data.length / rowsPerPageConfig);
+            tableState.currentPage = 0; // Start from the first page
+
+            // Render the initial page
+            renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
+
+            // Set up the interval for page switching if there's more than one page
+            if (tableState.totalPages > 1) {
+                tableState.intervalId = setInterval(() => {
+                    tableState.currentPage = (tableState.currentPage + 1) % tableState.totalPages;
+                    renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
+                }, PAGE_SWITCH_INTERVAL);
+            }
+        }
+
+        /**
+         * Updates the last updated timestamp.
+         */
+        function updateTimestamp() {
+            const now = new Date();
+            lastUpdatedDiv.textContent = `Last updated: ${now.toLocaleTimeString()} on ${now.toLocaleDateString()}`;
+        }
+
+        /**
+         * Main function to fetch, parse, and render data for all tables.
+         */
+        async function updateDisplay() {
+            errorMessageDiv.classList.add('hidden'); // Hide any previous error messages
+
+            // Show loading messages for all tables
+            pendingQuotationTableBody.innerHTML = `<tr><td colspan="${PENDING_COLUMNS.length}" class="text-center py-8 text-gray-500">Loading data...</td></tr>`;
+            orderStatusTableBody.innerHTML = `<tr><td colspan="${ORDER_STATUS_COLUMNS.length}" class="text-center py-8 text-gray-500">Loading data...</td></tr>`;
+            allQuotationTableBody.innerHTML = `<tr><td colspan="${ALL_QUOTATION_COLUMNS.length}" class="text-center py-8 text-gray-500">Loading data...</td></tr>`;
+
+            try {
+                const csvText = await fetchCsvData(CSV_URL);
+                const parsedData = parseCsv(csvText);
+
+                // Filter data for the "Pending Quotation" table
+                pendingTableState.data = parsedData.filter(row => {
+                    const status = row.Status ? row.Status.toLowerCase() : '';
+                    return status.includes('pending') || status.includes('in progress');
+                });
+
+                // Filter data for the "Order Status" table
+                orderTableState.data = parsedData.filter(row => {
+                    const status = row.Status ? row.Status.toLowerCase() : '';
+                    return status.includes('order') || status.includes('on hold') || status.includes('in fabrication');
+                });
+
+                // Set data for the "All Quotation Data" table
+                allQuotationTableState.data = parsedData;
+
+                // Setup pagination for the pending and order status tables
+                setupPagination(pendingTableState, pendingQuotationTableBody, PENDING_COLUMNS, false, ROWS_PER_PAGE_PAGINATED);
+                setupPagination(orderTableState, orderStatusTableBody, ORDER_STATUS_COLUMNS, true, ROWS_PER_PAGE_PAGINATED);
+                // Setup pagination for the "All Quotation Data" table
+                setupPagination(allQuotationTableState, allQuotationTableBody, ALL_QUOTATION_COLUMNS, true, ROWS_PER_PAGE_ALL_QUOTATION);
+                
+                updateTimestamp();
+
+            } catch (error) {
+                console.error("Failed to update display:", error);
+                pendingQuotationTableBody.innerHTML = `<tr><td colspan="${PENDING_COLUMNS.length}" class="text-center py-8 text-red-400">Failed to load data.</td></tr>`;
+                orderStatusTableBody.innerHTML = `<tr><td colspan="${ORDER_STATUS_COLUMNS.length}" class="text-center py-8 text-red-400">Failed to load data.</td></tr>`;
+                allQuotationTableBody.innerHTML = `<tr><td colspan="${ALL_QUOTATION_COLUMNS.length}" class="text-center py-8 text-red-400">Failed to load data. Please check the source.</td></tr>`;
+                errorMessageDiv.textContent = `Error: ${error.message}. Please ensure the Google Sheet is publicly accessible and the URL is correct.`;
+                errorMessageDiv.classList.remove('hidden');
+            }
+        }
+
+        // Initial load and set up data refresh interval
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDisplay();
+            // Set up automatic data refresh every 30 seconds
+            setInterval(updateDisplay, 30000);
+        });
+    </script>
+</body>
+</html>
