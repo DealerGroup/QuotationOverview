@@ -41,6 +41,8 @@
             margin: 0;
             padding: 1rem;
             box-sizing: border-box;
+            font-size: 1rem; /* Slightly increased base font size */
+            font-weight: 700; /* Made default text bolder (from 600 to 700) */
         }
         .container {
             max-width: 95%;
@@ -57,7 +59,7 @@
         }
         .section-title {
             color: var(--color-text-dark);
-            font-weight: bold;
+            font-weight: 800; /* Made section titles bolder (from bold/700 to 800) */
             text-align: center;
             margin-bottom: 1.5rem;
         }
@@ -106,7 +108,7 @@
         th {
             background-color: var(--color-sub-header-bg);
             color: white; /* Explicitly set to white for readability on dark header */
-            font-weight: bold;
+            font-weight: 900; /* Kept table headers at 900, as it's already very bold */
             text-transform: uppercase;
             font-size: 0.875rem;
         }
@@ -132,15 +134,15 @@
 
         /* Status-specific classes */
         .status-cell {
-            font-weight: bold;
+            font-weight: 800; /* Made status cells bolder (from bold/700 to 800) */
         }
         .status-on-time { color: var(--color-status-on-time); }
         .status-delayed { color: var(--color-status-delayed); }
         .status-cancelled { color: var(--color-status-cancelled); }
         .status-boarding { color: var(--color-status-boarding); }
-        .status-in-fabrication { color: var(--color-status-in-fabrication); } /* Updated */
-        .status-on-hold { color: var(--color-status-on-hold); } /* Updated */
-        .status-order { color: var(--color-status-order); } /* Updated */
+        .status-in-fabrication { color: var(--color-status-in-fabrication); }
+        .status-on-hold { color: var(--color-status-on-hold); }
+        .status-order { color: var(--color-status-order); }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -254,7 +256,7 @@
         // 3. In the "Link" tab, choose the sheet you want to publish and select "Comma-separated values (.csv)" for "Publish as".
         // 4. Copy the generated URL. It should look similar to:
         //    "https://docs.google.com/spreadsheets/d/e/{YOUR_SHEET_ID}/pub?gid={YOUR_GID}&single=true&output=csv"
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdxuPA2X-NQsefXyePu_KGoL45yPAgqXC0ixlx0_eYnUySW_gjJgC8I3pZJJ29nflciSVXL7M-YUbm/pub?gid=1383182578&single=true&output=csv";
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdxuPA2X-NQsefXyePu_KGoL45yPAgqXC0ixlx0_eYnUySW_gjJgC8I3pZJJ29nflciSVXL7M-YUbm/pub?gid=1383182578&single=true&output=csv';
 
         // Define the columns for the "Pending Quotation" table
         const PENDING_COLUMNS = [
@@ -356,7 +358,7 @@
          * @param {number} currentPage - The current page index (for pagination).
          * @param {number} rowsPerPage - The number of rows to display per page.
          */
-        function renderTable(tableBody, data, columns, includeStatusStylated = false, currentPage = 0, rowsPerPage = data.length) {
+        function renderTable(tableBody, data, columns, includeStatusStyling = false, currentPage = 0, rowsPerPage = data.length) {
             tableBody.innerHTML = ''; // Clear existing rows
 
             const startIndex = currentPage * rowsPerPage;
@@ -384,7 +386,7 @@
                     let cellValue = rowData[col.key] || ''; // Get value, default to empty string
 
                     // Apply specific styling for the 'Status' column if enabled
-                    if (includeStatusStylated && col.key === 'Status') {
+                    if (includeStatusStyling && col.key === 'Status') {
                         cell.classList.add('status-cell');
                         const statusLower = cellValue.toLowerCase();
 
