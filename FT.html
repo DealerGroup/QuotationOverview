@@ -483,9 +483,8 @@
         ];
 
         const ROWS_PER_PAGE_PAGINATED = 4;
-        // Changed pagination limit for "All Quotation Data" table from 15 to 10
         const ROWS_PER_PAGE_ALL_QUOTATION = 10; 
-        const PAGE_SWITCH_INTERVAL = 15000;
+        const PAGE_SWITCH_INTERVAL = 15000; // 15 seconds
 
         const pendingTableState = { data: [], currentPage: 0, totalPages: 0, intervalId: null };
         const orderTableState = { data: [], currentPage: 0, totalPages: 0, intervalId: null };
@@ -633,8 +632,9 @@
          * @param {Array<Object>} columns - Column definitions for the table.
          * @param {boolean} includeStatusStyling - Whether to apply status styling.
          * @param {number} rowsPerPageConfig - The number of rows to display per page for this specific table.
+         * @param {function} restartInterval - Callback to restart the automatic pagination interval.
          */
-        function createPaginationControls(prevButtonContainer, nextButtonContainer, tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig) {
+        function createPaginationControls(prevButtonContainer, nextButtonContainer, tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig, restartInterval) {
             prevButtonContainer.innerHTML = ''; // Clear existing controls
             nextButtonContainer.innerHTML = ''; // Clear existing controls
 
@@ -645,6 +645,7 @@
                     tableState.currentPage--;
                     renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
                     updateButtonStates();
+                    restartInterval(); // Restart interval after manual click
                 }
             };
 
@@ -655,6 +656,7 @@
                     tableState.currentPage++;
                     renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
                     updateButtonStates();
+                    restartInterval(); // Restart interval after manual click
                 }
             };
 
@@ -681,23 +683,53 @@
          * @param {string} nextControlsContainerId - The ID of the div for the 'Next' button.
          */
         function setupPagination(tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig, prevControlsContainerId, nextControlsContainerId) {
+            // Function to restart the interval
+            const restartInterval = () => {
+                if (tableState.intervalId) {
+                    clearInterval(tableState.intervalId);
+                }
+                if (tableState.totalPages > 1) {
+                    tableState.intervalId = setInterval(() => {
+                        tableState.currentPage = (tableState.currentPage + 1) % tableState.totalPages;
+                        renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
+                        // Update button states on auto-switch
+                        const prevButton = document.getElementById(prevControlsContainerId).querySelector('button:first-child');
+                        const nextButton = document.getElementById(nextControlsContainerId).querySelector('button:last-child');
+                        if (prevButton && nextButton) {
+                            prevButton.disabled = tableState.currentPage === 0;
+                            nextButton.disabled = tableState.currentPage === tableState.totalPages - 1 || tableState.totalPages === 0;
+                        }
+                    }, PAGE_SWITCH_INTERVAL);
+                }
+            };
+
             // Clear any existing interval to prevent multiple loops
             if (tableState.intervalId) {
                 clearInterval(tableState.intervalId);
             }
 
             tableState.totalPages = Math.ceil(tableState.data.length / rowsPerPageConfig);
-            tableState.currentPage = 0; // Start from the first page
+            
+            // Adjust currentPage if it's out of bounds after a data update
+            if (tableState.currentPage >= tableState.totalPages && tableState.totalPages > 0) {
+                tableState.currentPage = tableState.totalPages - 1;
+            } else if (tableState.totalPages === 0) {
+                tableState.currentPage = 0;
+            }
+            // If tableState.currentPage is already valid, it retains its value.
 
-            // Render the initial page
+            // Render the current page (which might have been adjusted or retained)
             renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
 
-            // Create and manage pagination controls
+            // Create and manage pagination controls, passing the restartInterval function
             const prevControlsContainer = document.getElementById(prevControlsContainerId);
             const nextControlsContainer = document.getElementById(nextControlsContainerId);
             if (prevControlsContainer && nextControlsContainer) {
-                createPaginationControls(prevControlsContainer, nextControlsContainer, tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig);
+                createPaginationControls(prevControlsContainer, nextControlsContainer, tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig, restartInterval);
             }
+
+            // Start the initial automatic pagination
+            restartInterval();
         }
 
         /**
@@ -968,8 +1000,8 @@
         // Initial load and set up data refresh interval
         document.addEventListener('DOMContentLoaded', () => {
             updateDisplay();
-            // Set up automatic data refresh every 30 seconds
-            setInterval(updateDisplay, 30000);
+            // Set up automatic data refresh every 60 seconds (1 minute)
+            setInterval(updateDisplay, 60000); 
         });
     </script>
 </body>
