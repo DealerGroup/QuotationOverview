@@ -6,12 +6,14 @@
     <title>Quotation Information Display</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js CDN for charting -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         /* Neutral and Complementing Pastel color theme */
         :root {
             --color-primary-bg: #629BB5;
             --color-secondary-bg: #C3DFE3;
-            --color-table-header-bg: #FFFFFF;
+            --color-table-header-bg: #FFFFFF; /* This is the background for charts and now the legend */
             --color-sub-header-bg: #567C7D;
             --color-table-row-odd: #B9D8E1;
             --color-table-row-even: #E2F2EF;
@@ -21,14 +23,17 @@
             --color-text-dark: #2F4156;
             --color-text-light: #CCCCCC;
 
-            /* Status Colors */
-            --color-status-on-time: #8BC34A; /* Pastel green */
-            --color-status-delayed: #FFC107; /* Pastel amber/orange */
-            --color-status-cancelled: #EF5350; /* Pastel red */
-            --color-status-boarding: #4FC3F7; /* Pastel light blue (used for 'In Progress') */
-            --color-status-in-fabrication: #E08C75; /* Changed to darker shade */
-            --color-status-on-hold: #D6C09D; /* Changed to darker shade */
-            --color-status-order: #E0A8A8; /* Changed to darker shade */
+            /* Status Colors - Updated for better contrast and complementarity */
+            --color-status-completed: #66BB6A; /* Richer green for Completed */
+            --color-status-pending: #D32F2F; /* Swapped with For Shop Drawing: Clear red for Pending */
+            --color-status-cancelled: #EF5350; /* Pastel red (retained for Cancelled/Rejected) */
+            --color-status-in-progress: #3F88C5; /* Deeper blue for In Progress */
+            --color-status-in-fabrication: #E08C75; /* Darker peach/coral (retained) */
+            --color-status-on-hold: #BDB76B; /* Darker khaki/olive-cream color for On Hold */
+            --color-status-order: #C28B8B; /* Darker muted rose/pink for Order */
+            --color-status-for-checking: #8E44AD; /* Medium purple for For Checking */
+            --color-status-for-shop-drawing: #FFB300; /* Swapped with Pending: Stronger amber for For Shop Drawing */
+            --color-status-for-revision: #FF7043; /* Slightly deeper coral for For Revision */
         }
 
         body {
@@ -41,8 +46,8 @@
             margin: 0;
             padding: 1rem;
             box-sizing: border-box;
-            font-size: 1rem; /* Slightly increased base font size */
-            font-weight: 700; /* Made default text bolder (from 600 to 700) */
+            font-size: 1rem;
+            font-weight: 700;
         }
         .container {
             max-width: 95%;
@@ -59,7 +64,7 @@
         }
         .section-title {
             color: var(--color-text-dark);
-            font-weight: 800; /* Made section titles bolder (from bold/700 to 800) */
+            font-weight: 800;
             text-align: center;
             margin-bottom: 1.5rem;
         }
@@ -108,7 +113,7 @@
         th {
             background-color: var(--color-sub-header-bg);
             color: white; /* Explicitly set to white for readability on dark header */
-            font-weight: 900; /* Kept table headers at 900, as it's already very bold */
+            font-weight: 900;
             text-transform: uppercase;
             font-size: 0.875rem;
         }
@@ -134,33 +139,187 @@
 
         /* Status-specific classes */
         .status-cell {
-            font-weight: 800; /* Made status cells bolder (from bold/700 to 800) */
+            font-weight: 800;
         }
-        .status-on-time { color: var(--color-status-on-time); }
-        .status-delayed { color: var(--color-status-delayed); }
+        .status-completed { color: var(--color-status-completed); }
+        .status-pending { color: var(--color-status-pending); }
         .status-cancelled { color: var(--color-status-cancelled); }
-        .status-boarding { color: var(--color-status-boarding); }
+        .status-in-progress { color: var(--color-status-in-progress); }
         .status-in-fabrication { color: var(--color-status-in-fabrication); }
         .status-on-hold { color: var(--color-status-on-hold); }
         .status-order { color: var(--color-status-order); }
+        .status-for-checking { color: var(--color-status-for-checking); }
+        .status-for-shop-drawing { color: var(--color-status-for-shop-drawing); }
+        .status-for-revision { color: var(--color-status-for-revision); }
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
+        /* New wrapper for charts and legend to share background */
+        .charts-and-legend-wrapper {
+            background-color: var(--color-table-header-bg);
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-top: 4rem; /* Spacing from the table above */
+            border: 2px solid var(--color-table-border);
+        }
+
+        /* Chart specific styles - removed shared background/border */
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem; /* Space between charts and legend */
+            padding: 0; /* Removed padding as it's now on the wrapper */
+            background-color: transparent; /* Transparent to show wrapper background */
+            border: none; /* Removed border as it's now on the wrapper */
+            box-shadow: none; /* Removed shadow as it's now on the wrapper */
+            border-radius: 0; /* Removed border-radius as it's now on the wrapper */
+        }
+        @media (min-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr 1fr;
             }
-            .section-title {
-                font-size: 1.75rem;
-                margin-bottom: 1rem;
+        }
+        @media (min-width: 1024px) {
+            .charts-container {
+                grid-template-columns: 1fr 1fr 1fr;
             }
-            th, td {
-                padding: 0.5rem 0.75rem;
-                font-size: 0.75rem;
-            }
-            .table-responsive {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
+        }
+
+        /* Table responsive container */
+        .table-responsive {
+            display: flex;
+            flex-direction: column; /* Stack controls and table vertically */
+            width: 100%; /* Ensure it takes full width of parent */
+        }
+
+        /* Pagination controls wrapper (now inside table-responsive) */
+        .pagination-header-wrapper {
+            display: flex;
+            justify-content: space-between; /* Puts space between left, header, and right buttons */
+            align-items: center;
+            margin-bottom: 0.5rem; /* Space before the table starts */
+            padding: 0 1rem; /* Padding to align with table content */
+            width: 100%; /* Ensure it takes full width of parent */
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+
+        /* Adjust section title when it's inline with buttons */
+        .section-title-inline {
+            flex-grow: 1; /* Allows header to take up available space */
+            text-align: center; /* Centers the text within its flex item */
+            margin: 0; /* Remove default margins that might interfere */
+            color: var(--color-text-dark); /* Ensure color is correct */
+            font-weight: 800; /* Ensure font weight is correct */
+            font-size: 1.5rem; /* Adjust font size if needed for alignment */
+        }
+
+        .pagination-controls {
+            display: flex; /* Ensure buttons within this div are also flex if needed */
+            gap: 1rem; /* Space between Prev and Next if they were grouped */
+            /* Removed margin-top/bottom as they are handled by parent .pagination-header-wrapper */
+        }
+
+        .pagination-controls button {
+            background-color: var(--color-sub-header-bg);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .pagination-controls button:hover:not(:disabled) {
+            background-color: #4a6b6c; /* A slightly darker shade for hover */
+        }
+        .pagination-controls button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+
+        .chart-container {
+            background-color: var(--color-table-header-bg);
+            border: 2px solid var(--color-table-border);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--color-text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .chart-svg {
+            display: block;
+            margin: auto;
+        }
+
+        /* Adjusted label styles for visibility */
+        .chart-label {
+            font-size: 1.1rem; /* Increased font size for better visibility */
+            font-weight: 700; /* Made bolder */
+            fill: white; /* Changed label color to white for better contrast on dark slices */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8); /* Added text shadow for better readability */
+        }
+
+        /* Style for the total count label in the center of the donut */
+        .total-count-label {
+            font-size: 1.8rem; /* Larger font size for total count */
+            font-weight: 900; /* Extra bold */
+            fill: var(--color-text-dark); /* Dark text color */
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        /* Legend styles - removed shared background/border */
+        .combined-legend-container {
+            padding: 0; /* Removed padding as it's now on the wrapper */
+            margin-top: 0; /* Removed margin-top as it's now part of the wrapper */
+            background-color: transparent; /* Transparent to show wrapper background */
+            border: none; /* Removed border as it's now on the wrapper */
+            box-shadow: none; /* Removed shadow as it's now on the wrapper */
+            border-radius: 0; /* Removed border-radius as it's now on the wrapper */
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* Removed background style for the legend title */
+        #combinedLegend h3 {
+            color: var(--color-text-dark);
+            font-weight: 800;
+            text-transform: none;
+            font-size: 1.5rem;
+            padding: 0;
+            border-radius: 0;
+            margin-bottom: 1rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--color-text-dark); /* Ensure text is dark for contrast on light background */
+        }
+
+        .legend-color-box {
+            width: 1.2rem;
+            height: 1.2rem;
+            border-radius: 0.25rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -171,7 +330,11 @@
         <div class="two-column-tables-container">
             <!-- Pending Quotation Table -->
             <div class="table-section-bordered">
-                <h2 class="text-3xl section-title">Pending Quotation</h2>
+                <div class="pagination-header-wrapper">
+                    <div id="pendingPaginationControlsLeft" class="pagination-controls"></div>
+                    <h2 class="section-title-inline">Pending Quotation</h2>
+                    <div id="pendingPaginationControlsRight" class="pagination-controls"></div>
+                </div>
                 <div class="table-responsive">
                     <table id="pendingQuotationTable" class="min-w-full">
                         <thead>
@@ -194,7 +357,11 @@
 
             <!-- Order Status Table -->
             <div class="table-section-bordered">
-                <h2 class="text-3xl section-title">Order Status</h2>
+                <div class="pagination-header-wrapper">
+                    <div id="orderPaginationControlsLeft" class="pagination-controls"></div>
+                    <h2 class="section-title-inline">Order Status</h2>
+                    <div id="orderPaginationControlsRight" class="pagination-controls"></div>
+                </div>
                 <div class="table-responsive">
                     <table id="orderStatusTable" class="min-w-full">
                         <thead>
@@ -219,7 +386,11 @@
 
         <!-- All Quotation Data Table -->
         <div class="table-section-bordered">
-            <h2 class="text-3xl section-title">All Quotation Data</h2>
+            <div class="pagination-header-wrapper">
+                <div id="allQuotationPaginationControlsLeft" class="pagination-controls"></div>
+                <h2 class="section-title-inline">All Quotation Data</h2>
+                <div id="allQuotationPaginationControlsRight" class="pagination-controls"></div>
+            </div>
             <div class="table-responsive">
                 <table id="allQuotationTable" class="min-w-full">
                     <thead>
@@ -237,18 +408,44 @@
                         <!-- Data will be loaded here by JavaScript -->
                         <tr>
                             <td colspan="7" class="text-center py-8 text-gray-500">Loading data...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
         <div id="lastUpdated" class="text-sm text-gray-500 mt-8 text-center"></div>
         <div id="errorMessage" class="text-red-400 text-center mt-4 hidden"></div>
+
+        <!-- Combined Charts and Legend Section -->
+        <div class="charts-and-legend-wrapper">
+            <!-- Donut Charts Section -->
+            <div class="charts-container">
+                <div id="pendingChartContainer" class="chart-container">
+                    <h3 class="chart-title">Pending Quotation Status Distribution</h3>
+                    <svg id="pendingChart" class="chart-svg"></svg>
+                </div>
+                <div id="orderChartContainer" class="chart-container">
+                    <h3 class="chart-title">Order Status Distribution</h3>
+                    <svg id="orderChart" class="chart-svg"></svg>
+                </div>
+                <div id="allQuotationChartContainer" class="chart-container">
+                    <h3 class="chart-title">All Quotation Status Distribution</h3>
+                    <svg id="allQuotationChart" class="chart-svg"></svg>
+                </div>
+            </div>
+
+            <!-- Combined Legend Section -->
+            <div id="combinedLegend" class="combined-legend-container">
+                <h3 class="chart-title w-full">Status Legend</h3>
+                <!-- Legend items will be dynamically added here -->
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // Define the Google Sheet CSV URL
+        // Define the Google Sheet CSV URL (declared once here, at the very top of the script)
         // IMPORTANT: Please replace this with the *correct* public CSV URL of your Google Sheet.
         // To get this URL:
         // 1. Open your Google Sheet.
@@ -258,7 +455,8 @@
         //    "https://docs.google.com/spreadsheets/d/e/{YOUR_SHEET_ID}/pub?gid={YOUR_GID}&single=true&output=csv"
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdxuPA2X-NQsefXyePu_KGoL45yPAgqXC0ixlx0_eYnUySW_gjJgC8I3pZJJ29nflciSVXL7M-YUbm/pub?gid=1383182578&single=true&output=csv';
 
-        // Define the columns for the "Pending Quotation" table
+        // --- Global Variable Declarations ---
+        // These variables are declared only once here to avoid "already been declared" errors.
         const PENDING_COLUMNS = [
             { header: "Client", key: "Client" },
             { header: "Project Name", key: "Project Name" },
@@ -266,7 +464,6 @@
             { header: "Coor.", key: "Coor." }
         ];
 
-        // Define the columns for the "Order Status" table
         const ORDER_STATUS_COLUMNS = [
             { header: "Client", key: "Client" },
             { header: "Quote #", key: "Quote#" },
@@ -275,7 +472,6 @@
             { header: "Fabricator", key: "Fabricator" }
         ];
 
-        // Define the columns for the "All Quotation Data" table
         const ALL_QUOTATION_COLUMNS = [
             { header: "Client", key: "Client" },
             { header: "Project Name", key: "Project Name" },
@@ -286,20 +482,27 @@
             { header: "Quote#", key: "Quote#" }
         ];
 
-        const ROWS_PER_PAGE_PAGINATED = 4; // Number of rows to display per page for Pending and Order Status tables
-        const ROWS_PER_PAGE_ALL_QUOTATION = 15; // Number of rows to display per page for All Quotation Data table
-        const PAGE_SWITCH_INTERVAL = 5000; // 5 seconds for page switching
+        const ROWS_PER_PAGE_PAGINATED = 4;
+        // Changed pagination limit for "All Quotation Data" table from 15 to 10
+        const ROWS_PER_PAGE_ALL_QUOTATION = 10; 
+        const PAGE_SWITCH_INTERVAL = 15000;
 
-        // State objects for paginated tables
         const pendingTableState = { data: [], currentPage: 0, totalPages: 0, intervalId: null };
         const orderTableState = { data: [], currentPage: 0, totalPages: 0, intervalId: null };
-        const allQuotationTableState = { data: [], currentPage: 0, totalPages: 0, intervalId: null }; // New state for All Quotation Data
+        const allQuotationTableState = { data: [], currentPage: 0, totalPages: 0, intervalId: null };
 
         const pendingQuotationTableBody = document.querySelector('#pendingQuotationTable tbody');
         const orderStatusTableBody = document.querySelector('#orderStatusTable tbody');
         const allQuotationTableBody = document.querySelector('#allQuotationTable tbody');
         const lastUpdatedDiv = document.getElementById('lastUpdated');
         const errorMessageDiv = document.getElementById('errorMessage');
+
+        // Minimum angle (in radians) for a slice to display a label
+        // A full circle is 2 * Math.PI radians. 0.1 radians is roughly 5.7 degrees.
+        const MIN_SLICE_ANGLE_FOR_LABEL = 0.1; 
+
+
+        // --- Function Definitions ---
 
         /**
          * Fetches CSV data from the given URL.
@@ -320,7 +523,7 @@
             } catch (error) {
                 console.error("Error fetching CSV data:", error);
                 // Provide a more informative error message to the user
-                throw new Error(`Failed to fetch data. Please check your network connection and ensure the CSV URL is publicly accessible. Details: ${error.message}`);
+                throw new Error(`Failed to fetch data. Please check your network connection and ensure the CSV URL is publicly publicly accessible. Details: ${error.message}`);
             }
         }
 
@@ -335,7 +538,8 @@
             if (lines.length === 0) return [];
 
             // Simple CSV parsing: split by comma, trim whitespace, handle quoted fields
-            const headers = lines[0].split(',').map(header => header.trim().replace(/^"|"$/g, ''));
+            const headers = lines[0].
+                split(',').map(header => header.trim().replace(/^"|"$/g, ''));
             const data = [];
 
             for (let i = 1; i < lines.length; i++) {
@@ -390,23 +594,27 @@
                         cell.classList.add('status-cell');
                         const statusLower = cellValue.toLowerCase();
 
-                        // Specific status colors
-                        if (statusLower.includes('in fabrication')) {
+                        // Assigning colors based on status keywords
+                        if (statusLower.includes('completed')) {
+                            cell.classList.add('status-completed');
+                        } else if (statusLower.includes('pending')) {
+                            cell.classList.add('status-pending');
+                        } else if (statusLower.includes('in progress')) {
+                            cell.classList.add('status-in-progress');
+                        } else if (statusLower.includes('for checking')) {
+                            cell.classList.add('status-for-checking');
+                        } else if (statusLower.includes('for shop drawing')) {
+                            cell.classList.add('status-for-shop-drawing');
+                        } else if (statusLower.includes('for revision')) {
+                            cell.classList.add('status-for-revision');
+                        } else if (statusLower.includes('in fabrication')) {
                             cell.classList.add('status-in-fabrication');
                         } else if (statusLower.includes('on hold')) {
                             cell.classList.add('status-on-hold');
                         } else if (statusLower.includes('order')) {
                             cell.classList.add('status-order');
-                        }
-                        // Existing status colors
-                        else if (statusLower.includes('on time') || statusLower.includes('completed')) {
-                            cell.classList.add('status-on-time');
-                        } else if (statusLower.includes('delayed') || statusLower.includes('pending')) {
-                            cell.classList.add('status-delayed');
                         } else if (statusLower.includes('cancelled') || statusLower.includes('rejected')) {
                             cell.classList.add('status-cancelled');
-                        } else if (statusLower.includes('in progress') || statusLower.includes('boarding')) {
-                            cell.classList.add('status-boarding');
                         }
                     }
                     cell.textContent = cellValue;
@@ -417,14 +625,62 @@
         }
 
         /**
-         * Sets up pagination for a given table state.
+         * Creates and manages pagination control buttons (Prev, Next).
+         * @param {HTMLElement} prevButtonContainer - The div element for the 'Prev' button.
+         * @param {HTMLElement} nextButtonContainer - The div element for the 'Next' button.
          * @param {Object} tableState - The state object for the table (data, currentPage, totalPages, intervalId).
          * @param {HTMLElement} tableBody - The tbody element of the table.
          * @param {Array<Object>} columns - Column definitions for the table.
          * @param {boolean} includeStatusStyling - Whether to apply status styling.
          * @param {number} rowsPerPageConfig - The number of rows to display per page for this specific table.
          */
-        function setupPagination(tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig) {
+        function createPaginationControls(prevButtonContainer, nextButtonContainer, tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig) {
+            prevButtonContainer.innerHTML = ''; // Clear existing controls
+            nextButtonContainer.innerHTML = ''; // Clear existing controls
+
+            const prevButton = document.createElement('button');
+            prevButton.textContent = 'Prev';
+            prevButton.onclick = () => {
+                if (tableState.currentPage > 0) {
+                    tableState.currentPage--;
+                    renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
+                    updateButtonStates();
+                }
+            };
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = 'Next';
+            nextButton.onclick = () => {
+                if (tableState.currentPage < tableState.totalPages - 1) {
+                    tableState.currentPage++;
+                    renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
+                    updateButtonStates();
+                }
+            };
+
+            prevButtonContainer.appendChild(prevButton);
+            nextButtonContainer.appendChild(nextButton);
+
+            const updateButtonStates = () => {
+                prevButton.disabled = tableState.currentPage === 0;
+                nextButton.disabled = tableState.currentPage === tableState.totalPages - 1 || tableState.totalPages === 0;
+            };
+
+            // Initial state update
+            updateButtonStates();
+        }
+
+        /**
+         * Sets up pagination for a given table state.
+         * @param {Object} tableState - The state object for the table (data, currentPage, totalPages, intervalId).
+         * @param {HTMLElement} tableBody - The tbody element of the table.
+         * @param {Array<Object>} columns - An array of column definitions ({ header: string, key: string }).
+         * @param {boolean} includeStatusStyling - Whether to apply status styling.
+         * @param {number} rowsPerPageConfig - The number of rows to display per page for this specific table.
+         * @param {string} prevControlsContainerId - The ID of the div for the 'Prev' button.
+         * @param {string} nextControlsContainerId - The ID of the div for the 'Next' button.
+         */
+        function setupPagination(tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig, prevControlsContainerId, nextControlsContainerId) {
             // Clear any existing interval to prevent multiple loops
             if (tableState.intervalId) {
                 clearInterval(tableState.intervalId);
@@ -436,14 +692,180 @@
             // Render the initial page
             renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
 
-            // Set up the interval for page switching if there's more than one page
-            if (tableState.totalPages > 1) {
-                tableState.intervalId = setInterval(() => {
-                    tableState.currentPage = (tableState.currentPage + 1) % tableState.totalPages;
-                    renderTable(tableBody, tableState.data, columns, includeStatusStyling, tableState.currentPage, rowsPerPageConfig);
-                }, PAGE_SWITCH_INTERVAL);
+            // Create and manage pagination controls
+            const prevControlsContainer = document.getElementById(prevControlsContainerId);
+            const nextControlsContainer = document.getElementById(nextControlsContainerId);
+            if (prevControlsContainer && nextControlsContainer) {
+                createPaginationControls(prevControlsContainer, nextControlsContainer, tableState, tableBody, columns, includeStatusStyling, rowsPerPageConfig);
             }
         }
+
+        /**
+         * Prepares data for a donut chart by counting status occurrences.
+         * @param {Array<Object>} data - The raw data array.
+         * @param {string} statusKey - The key for the status column in the data objects.
+         * @returns {Array<Object>} - An array of objects with 'status' and 'count' properties.
+         */
+        function getChartData(data, statusKey) {
+            const statusCounts = {};
+            data.forEach(row => {
+                const status = row[statusKey] || 'Unknown';
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+            return Object.keys(statusCounts).map(status => ({ status, count: statusCounts[status] }));
+        }
+
+        /**
+         * Draws a donut chart using D3.js.
+         * @param {string} elementId - The ID of the SVG element to draw into.
+         * @param {Array<Object>} data - The data for the chart ({ status: string, count: number }).
+         * @param {string} title - The title for the chart.
+         * @param {boolean} countCompletedOnly - If true, the center label will only count 'Completed' statuses.
+         */
+        function drawDonutChart(elementId, data, countCompletedOnly = false) {
+            const container = d3.select(`#${elementId}`);
+            container.selectAll("*").remove(); // Clear previous chart
+
+            if (data.length === 0) {
+                // If no data, display a message directly in the SVG area
+                const svgWidth = 250, svgHeight = 250; 
+                container.attr("width", svgWidth).attr("height", svgHeight); // Set dimensions for text centering
+                container.append("text")
+                    .attr("x", svgWidth / 2)
+                    .attr("y", svgHeight / 2)
+                    .attr("text-anchor", "middle")
+                    .attr("dominant-baseline", "middle")
+                    .attr("font-size", "0.9rem")
+                    .attr("fill", "var(--color-text-dark)")
+                    .text("No data available for chart.");
+                return;
+            }
+
+            const width = 250, 
+                  height = 250, 
+                  radius = Math.min(width, height) / 2 - 10; 
+            const innerRadius = radius * 0.5; // Reduced inner radius to make donut thicker
+
+            const svg = container
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", `translate(${width / 2}, ${height / 2})`);
+
+            // Define a color scale that maps statuses to the CSS colors
+            const color = d3.scaleOrdinal()
+                .domain([
+                    'completed', 'pending', 'in progress', 'for checking',
+                    'for shop drawing', 'for revision', 'in fabrication',
+                    'on hold', 'order', 'cancelled', 'rejected', 'unknown' // Ensure 'unknown' is in domain
+                ])
+                .range([
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-completed').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-pending').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-in-progress').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-for-checking').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-for-shop-drawing').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-for-revision').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-in-fabrication').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-on-hold').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-order').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-cancelled').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-cancelled').trim(), // Rejected uses same as cancelled
+                    '#cccccc' // Default for unknown
+                ]);
+
+            const pie = d3.pie()
+                .value(d => d.count)
+                .sort(null); // No sorting, maintain order if any
+
+            const arc = d3.arc()
+                .innerRadius(innerRadius)
+                .outerRadius(radius);
+
+            const arcs = svg.selectAll("arc")
+                .data(pie(data))
+                .enter()
+                .append("g")
+                .attr("class", "arc");
+
+            arcs.append("path")
+                .attr("d", arc)
+                .attr("fill", d => color(d.data.status.toLowerCase()))
+                .attr("stroke", "white")
+                .style("stroke-width", "1px");
+
+            // Labels now only show the quantity, with improved visibility and conditional display
+            arcs.append("text")
+                .filter(d => (d.endAngle - d.startAngle) > MIN_SLICE_ANGLE_FOR_LABEL) /* Only show label if slice is large enough */
+                .attr("transform", d => `translate(${arc.centroid(d)})`)
+                .attr("text-anchor", "middle")
+                .attr("class", "chart-label")
+                .text(d => d.data.count); // Only display the count
+
+            // Calculate total count based on the flag
+            let totalCount;
+            if (countCompletedOnly) {
+                totalCount = data.filter(d => d.status.toLowerCase() === 'completed').reduce((sum, d) => sum + d.count, 0);
+            } else {
+                totalCount = d3.sum(data, d => d.count);
+            }
+
+            svg.append("text")
+                .attr("class", "total-count-label")
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "middle")
+                .text(totalCount);
+        }
+
+        /**
+         * Creates and updates a combined legend for all status types.
+         * @param {Array<Object>} allStatuses - An array of unique status strings (e.g., ['Pending', 'Completed', ...]).
+         */
+        function createCombinedLegend(allStatuses) {
+            const legendContainer = document.getElementById('combinedLegend');
+            // Clear existing legend items, but keep the title
+            const existingItems = legendContainer.querySelectorAll('.legend-item');
+            existingItems.forEach(item => item.remove());
+
+            const rootStyles = getComputedStyle(document.documentElement);
+            const statusColorMap = {
+                'completed': rootStyles.getPropertyValue('--color-status-completed').trim(),
+                'pending': rootStyles.getPropertyValue('--color-status-pending').trim(),
+                'in progress': rootStyles.getPropertyValue('--color-status-in-progress').trim(),
+                'for checking': rootStyles.getPropertyValue('--color-status-for-checking').trim(),
+                'for shop drawing': rootStyles.getPropertyValue('--color-status-for-shop-drawing').trim(),
+                'for revision': rootStyles.getPropertyValue('--color-status-for-revision').trim(),
+                'in fabrication': rootStyles.getPropertyValue('--color-status-in-fabrication').trim(),
+                'on hold': rootStyles.getPropertyValue('--color-status-on-hold').trim(),
+                'order': rootStyles.getPropertyValue('--color-status-order').trim(),
+                'cancelled': rootStyles.getPropertyValue('--color-status-cancelled').trim(),
+                'rejected': rootStyles.getPropertyValue('--color-status-cancelled').trim(), // Rejected uses same as cancelled
+                'unknown': '#cccccc' // Default for unknown
+            };
+
+            // Sort statuses alphabetically for consistent legend order
+            const sortedStatuses = [...new Set(allStatuses)].sort((a, b) => a.localeCompare(b));
+
+            sortedStatuses.forEach(status => {
+                const statusLower = status.toLowerCase();
+                const color = statusColorMap[statusLower] || statusColorMap['unknown'];
+
+                const legendItem = document.createElement('div');
+                legendItem.classList.add('legend-item');
+
+                const colorBox = document.createElement('div');
+                colorBox.classList.add('legend-color-box');
+                colorBox.style.backgroundColor = color;
+
+                const textSpan = document.createElement('span');
+                textSpan.textContent = status;
+
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(textSpan);
+                legendContainer.appendChild(legendItem);
+            });
+        }
+
 
         /**
          * Updates the last updated timestamp.
@@ -453,9 +875,7 @@
             lastUpdatedDiv.textContent = `Last updated: ${now.toLocaleTimeString()} on ${now.toLocaleDateString()}`;
         }
 
-        /**
-         * Main function to fetch, parse, and render data for all tables.
-         */
+        // --- Main function to fetch, parse, and render data for all tables and charts. ---
         async function updateDisplay() {
             errorMessageDiv.classList.add('hidden'); // Hide any previous error messages
 
@@ -464,6 +884,12 @@
             orderStatusTableBody.innerHTML = `<tr><td colspan="${ORDER_STATUS_COLUMNS.length}" class="text-center py-8 text-gray-500">Loading data...</td></tr>`;
             allQuotationTableBody.innerHTML = `<tr><td colspan="${ALL_QUOTATION_COLUMNS.length}" class="text-center py-8 text-gray-500">Loading data...</td></tr>`;
 
+            // Clear existing charts
+            d3.select("#pendingChart").selectAll("*").remove();
+            d3.select("#orderChart").selectAll("*").remove();
+            d3.select("#allQuotationChart").selectAll("*").remove();
+            document.getElementById('combinedLegend').querySelectorAll('.legend-item').forEach(item => item.remove()); // Clear legend
+
             try {
                 const csvText = await fetchCsvData(CSV_URL);
                 const parsedData = parseCsv(csvText);
@@ -471,10 +897,10 @@
                 // Filter data for the "Pending Quotation" table
                 pendingTableState.data = parsedData.filter(row => {
                     const status = row.Status ? row.Status.toLowerCase() : '';
-                    return status.includes('pending') || status.includes('in progress');
+                    return status.includes('pending') || status.includes('in progress') || status.includes('for checking') || status.includes('for shop drawing') || status.includes('for revision');
                 });
 
-                // Filter data for the "Order Status" table
+                // Filter data for the "Order Status" table to only show "Order", "On Hold", "In Fabrication"
                 orderTableState.data = parsedData.filter(row => {
                     const status = row.Status ? row.Status.toLowerCase() : '';
                     return status.includes('order') || status.includes('on hold') || status.includes('in fabrication');
@@ -484,12 +910,38 @@
                 allQuotationTableState.data = parsedData;
 
                 // Setup pagination for the pending and order status tables
-                setupPagination(pendingTableState, pendingQuotationTableBody, PENDING_COLUMNS, false, ROWS_PER_PAGE_PAGINATED);
-                setupPagination(orderTableState, orderStatusTableBody, ORDER_STATUS_COLUMNS, true, ROWS_PER_PAGE_PAGINATED);
+                setupPagination(pendingTableState, pendingQuotationTableBody, PENDING_COLUMNS, false, ROWS_PER_PAGE_PAGINATED, 'pendingPaginationControlsLeft', 'pendingPaginationControlsRight');
+                setupPagination(orderTableState, orderStatusTableBody, ORDER_STATUS_COLUMNS, true, ROWS_PER_PAGE_PAGINATED, 'orderPaginationControlsLeft', 'orderPaginationControlsRight');
                 // Setup pagination for the "All Quotation Data" table
-                setupPagination(allQuotationTableState, allQuotationTableBody, ALL_QUOTATION_COLUMNS, true, ROWS_PER_PAGE_ALL_QUOTATION);
+                setupPagination(allQuotationTableState, allQuotationTableBody, ALL_QUOTATION_COLUMNS, true, ROWS_PER_PAGE_ALL_QUOTATION, 'allQuotationPaginationControlsLeft', 'allQuotationPaginationControlsRight');
                 
                 updateTimestamp();
+
+                // Prepare and draw charts
+                const pendingChartData = getChartData(pendingTableState.data, 'Status');
+                const orderChartData = getChartData(orderTableState.data, 'Status');
+                const allQuotationChartData = getChartData(allQuotationTableState.data, 'Status');
+
+                drawDonutChart('pendingChart', pendingChartData);
+                drawDonutChart('orderChart', orderChartData);
+                // Pass true for countCompletedOnly to the allQuotationChart
+                drawDonutChart('allQuotationChart', allQuotationChartData, true); 
+
+                // Collect all unique statuses from all data sets for the combined legend
+                const allUniqueStatuses = new Set();
+                parsedData.forEach(row => {
+                    if (row.Status) allUniqueStatuses.add(row.Status);
+                });
+                // Add statuses from filtered data as well, in case some are only in filtered sets
+                pendingTableState.data.forEach(row => {
+                    if (row.Status) allUniqueStatuses.add(row.Status);
+                });
+                orderTableState.data.forEach(row => {
+                    if (row.Status) allUniqueStatuses.add(row.Status);
+                });
+
+                createCombinedLegend(Array.from(allUniqueStatuses));
+
 
             } catch (error) {
                 console.error("Failed to update display:", error);
@@ -498,6 +950,18 @@
                 allQuotationTableBody.innerHTML = `<tr><td colspan="${ALL_QUOTATION_COLUMNS.length}" class="text-center py-8 text-red-400">Failed to load data. Please check the source.</td></tr>`;
                 errorMessageDiv.textContent = `Error: ${error.message}. Please ensure the Google Sheet is publicly accessible and the URL is correct.`;
                 errorMessageDiv.classList.remove('hidden');
+
+                // Clear charts on error
+                d3.select("#pendingChart").selectAll("*").remove();
+                d3.select("#orderChart").selectAll("*").remove();
+                d3.select("#allQuotationChart").selectAll("*").remove();
+                document.getElementById('combinedLegend').querySelectorAll('.legend-item').forEach(item => item.remove()); // Clear legend on error
+                // Add error text to charts
+                const chartErrorText = "Error loading chart data.";
+                const svgWidth = 250, svgHeight = 250; // Use chart's expected dimensions
+                d3.select("#pendingChart").attr("width", svgWidth).attr("height", svgHeight).append("text").attr("x", svgWidth / 2).attr("y", svgHeight / 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle").attr("font-size", "0.9rem").attr("fill", "var(--color-text-dark)").text(chartErrorText);
+                d3.select("#orderChart").attr("width", svgWidth).attr("height", svgHeight).append("text").attr("x", svgWidth / 2).attr("y", svgHeight / 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle").attr("font-size", "0.9rem").attr("fill", "var(--color-text-dark)").text(chartErrorText);
+                d3.select("#allQuotationChart").attr("width", svgWidth).attr("height", svgHeight).append("text").attr("x", svgWidth / 2).attr("y", svgHeight / 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle").attr("font-size", "0.9rem").attr("fill", "var(--color-text-dark)").text(chartErrorText);
             }
         }
 
