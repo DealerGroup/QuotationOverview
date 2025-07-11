@@ -24,17 +24,17 @@
             --color-text-light: #CCCCCC;
 
             /* Status Colors - Updated for better contrast and complementarity */
-            --color-status-completed: #66BB6A; /* Richer green for Completed */
-            --color-status-pending: #D32F2F; /* Swapped with For Shop Drawing: Clear red for Pending */
-            --color-status-cancelled: #EF5350; /* Pastel red (retained for Cancelled/Rejected) */
-            --color-status-in-progress: #3F88C5; /* Deeper blue for In Progress */
-            --color-status-in-fabrication: #E08C75; /* Darker peach/coral (retained) */
-            --color-status-on-hold: #BDB76B; /* Darker khaki/olive-cream color for On Hold */
-            --color-status-order: #C28B8B; /* Darker muted rose/pink for Order */
-            --color-status-for-checking: #8E44AD; /* Medium purple for For Checking */
-            --color-status-for-shop-drawing: #FFB300; /* Swapped with Pending: Stronger amber for For Shop Drawing */
-            --color-status-for-revision: #FF7043; /* Slightly deeper coral for For Revision */
-            --color-status-repeat-order: #9B59B6; /* New: Muted purple for Repeat Order */
+            --color-status-completed: #8BC34A; /* Light Green */
+            --color-status-pending: #D32F2F; /* Complimentary Red */
+            --color-status-cancelled: #EF5350; /* Soft Red */
+            --color-status-in-progress: #64B5F6; /* Light Blue */
+            --color-status-in-fabrication: #FFAB91; /* Light Peach - Swapped with For Shop Drawing */
+            --color-status-on-hold: #AED581; /* Pale Olive Green */
+            --color-status-order: #BA68C8; /* Lavender Purple */
+            --color-status-for-checking: #7986CB; /* Soft Indigo */
+            --color-status-for-shop-drawing: #FFD54F; /* Light Amber/Yellow - Swapped with In Fabrication */
+            --color-status-for-revision: #A1887F; /* Light Brown/Taupe */
+            --color-status-repeat-order: #4DB6AC; /* Teal Green */
         }
 
         body {
@@ -107,7 +107,6 @@
         /* Table cells and headers within any table */
         th, td {
             padding: 0.75rem 1rem;
-            text-align: left;
             border-bottom: 1px solid var(--color-table-border);
             color: var(--color-text-dark);
         }
@@ -117,6 +116,11 @@
             font-weight: 900;
             text-transform: uppercase;
             font-size: 0.875rem;
+            text-align: center; /* Centered alignment for table headers */
+        }
+        /* Default text alignment for table data cells */
+        td {
+            text-align: left; /* Default to left for all td elements */
         }
         tr:nth-child(odd) {
             background-color: var(--color-table-row-odd);
@@ -166,26 +170,18 @@
 
         /* Chart specific styles - removed shared background/border */
         .charts-container {
-            display: grid;
-            grid-template-columns: 1fr;
+            display: flex; /* Changed from grid to flex */
+            flex-wrap: wrap; /* Allow items to wrap to the next line */
+            justify-content: center; /* Center items horizontally */
             gap: 2rem;
-            margin-bottom: 2rem; /* Space between charts and legend */
+            margin-bottom: 2rem;
             padding: 0; /* Removed padding as it's now on the wrapper */
             background-color: transparent; /* Transparent to show wrapper background */
             border: none; /* Removed border as it's now on the wrapper */
             box-shadow: none; /* Removed shadow as it's now on the wrapper */
             border-radius: 0; /* Removed border-radius as it's now on the wrapper */
         }
-        @media (min-width: 768px) {
-            .charts-container {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-        @media (min-width: 1024px) {
-            .charts-container {
-                grid-template-columns: 1fr 1fr 1fr;
-            }
-        }
+        /* Removed all @media queries for .charts-container as flexbox handles responsiveness */
 
         /* Table responsive container */
         .table-responsive {
@@ -249,6 +245,8 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+            width: 350px; /* Reduced width for equal boxes */
+            height: 350px; /* Reduced height for equal boxes */
         }
 
         .chart-title {
@@ -256,6 +254,7 @@
             font-weight: 800;
             color: var(--color-text-dark);
             margin-bottom: 1rem;
+            white-space: normal; /* Added for text wrapping */
         }
 
         .chart-svg {
@@ -424,7 +423,7 @@
             <!-- Donut Charts Section -->
             <div class="charts-container">
                 <div id="pendingChartContainer" class="chart-container">
-                    <h3 class="chart-title">Pending Quotation Status Distribution</h3>
+                    <h3 class="chart-title">Pending Quotation Status<br>Distribution</h3>
                     <svg id="pendingChart" class="chart-svg"></svg>
                 </div>
                 <div id="orderChartContainer" class="chart-container">
@@ -432,7 +431,7 @@
                     <svg id="orderChart" class="chart-svg"></svg>
                 </div>
                 <div id="allQuotationChartContainer" class="chart-container">
-                    <h3 class="chart-title">All Quotation Status Distribution</h3>
+                    <h3 class="chart-title">All Quotation Status<br>Distribution</h3>
                     <svg id="allQuotationChart" class="chart-svg"></svg>
                 </div>
             </div>
@@ -525,13 +524,12 @@
             'In Fabrication',
             'On Hold',
             'Order',
-            'Repeat Order', // Added "Repeat Order"
+            'Repeat Order', 
             'For Checking',
             'For Shop Drawing',
             'For Revision',
             'Cancelled',
-            'Rejected',
-            'Unknown' // Include 'Unknown' for data that doesn't match a known status
+            'Unknown' 
         ];
 
 
@@ -638,20 +636,24 @@
                             cell.classList.add('status-for-checking');
                         } else if (statusLower.includes('for shop drawing')) {
                             cell.classList.add('status-for-shop-drawing');
-                        } else if (statusLower.includes('for revision')) {
-                            cell.classList.add('status-for-revision');
                         } else if (statusLower.includes('in fabrication')) {
                             cell.classList.add('status-in-fabrication');
                         } else if (statusLower.includes('on hold')) {
                             cell.classList.add('status-on-hold');
                         } else if (statusLower.includes('order')) {
                             cell.classList.add('status-order');
-                        } else if (statusLower.includes('repeat order')) { // New status check
+                        } else if (statusLower.includes('repeat order')) { 
                             cell.classList.add('status-repeat-order');
-                        } else if (statusLower.includes('cancelled') || statusLower.includes('rejected')) {
+                        } else if (statusLower.includes('for revision')) {
+                            cell.classList.add('status-for-revision');
+                        } else if (statusLower.includes('cancelled')) { 
                             cell.classList.add('status-cancelled');
                         }
                     }
+                    
+                    // All columns will now be left-aligned by default CSS, so no specific overrides needed here.
+                    // The CSS rule `td { text-align: left; }` handles this.
+
                     cell.textContent = cellValue;
                     row.appendChild(cell);
                 });
@@ -796,7 +798,7 @@
 
             if (data.length === 0) {
                 // If no data, display a message directly in the SVG area
-                const svgWidth = 250, svgHeight = 250; 
+                const svgWidth = 225, svgHeight = 225; /* Fixed size for donut SVG */
                 container.attr("width", svgWidth).attr("height", svgHeight); // Set dimensions for text centering
                 container.append("text")
                     .attr("x", svgWidth / 2)
@@ -809,9 +811,9 @@
                 return;
             }
 
-            const width = 250, 
-                  height = 250, 
-                  radius = Math.min(width, height) / 2 - 10; 
+            const width = 225, /* Fixed size for donut SVG */
+                  height = 225, /* Fixed size for donut SVG */
+                  radius = Math.min(width, height) / 2 - 10; /* Calculated based on fixed SVG size */
             const innerRadius = radius * 0.5; // Reduced inner radius to make donut thicker
 
             const svg = container
@@ -824,8 +826,8 @@
             const color = d3.scaleOrdinal()
                 .domain([
                     'completed', 'pending', 'in progress', 'for checking',
-                    'for shop drawing', 'for revision', 'in fabrication',
-                    'on hold', 'order', 'repeat order', 'cancelled', 'rejected', 'unknown' // Added 'repeat order' to domain
+                    'for shop drawing', 'in fabrication', 'on hold', 
+                    'order', 'repeat order', 'for revision', 'cancelled', 'unknown' 
                 ])
                 .range([
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-completed').trim(),
@@ -833,13 +835,12 @@
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-in-progress').trim(),
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-for-checking').trim(),
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-for-shop-drawing').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-for-revision').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-in-fabrication').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-in-fabrication').trim(), 
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-on-hold').trim(),
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-order').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-repeat-order').trim(), // Added color for repeat order
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-repeat-order').trim(), 
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-for-revision').trim(),
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-cancelled').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-cancelled').trim(), // Rejected uses same as cancelled
                     '#cccccc' // Default for unknown
                 ]);
 
@@ -903,13 +904,12 @@
                 'in progress': rootStyles.getPropertyValue('--color-status-in-progress').trim(),
                 'for checking': rootStyles.getPropertyValue('--color-status-for-checking').trim(),
                 'for shop drawing': rootStyles.getPropertyValue('--color-status-for-shop-drawing').trim(),
-                'for revision': rootStyles.getPropertyValue('--color-status-for-revision').trim(),
-                'in fabrication': rootStyles.getPropertyValue('--color-status-in-fabrication').trim(),
+                'in fabrication': rootStyles.getPropertyValue('--color-status-in-fabrication').trim(), 
                 'on hold': rootStyles.getPropertyValue('--color-status-on-hold').trim(),
                 'order': rootStyles.getPropertyValue('--color-status-order').trim(),
-                'repeat order': rootStyles.getPropertyValue('--color-status-repeat-order').trim(), // Added color for repeat order
+                'repeat order': rootStyles.getPropertyValue('--color-status-repeat-order').trim(), 
+                'for revision': rootStyles.getPropertyValue('--color-status-for-revision').trim(),
                 'cancelled': rootStyles.getPropertyValue('--color-status-cancelled').trim(),
-                'rejected': rootStyles.getPropertyValue('--color-status-cancelled').trim(), // Rejected uses same as cancelled
                 'unknown': '#cccccc' // Default for unknown
             };
 
@@ -973,7 +973,7 @@
                 // Filter data for the "Order Status" table to only show "Order", "On Hold", "In Fabrication"
                 orderTableState.data = parsedData.filter(row => {
                     const status = row.Status ? row.Status.toLowerCase() : '';
-                    return status.includes('order') || status.includes('on hold') || status.includes('in fabrication') || status.includes('repeat order'); // Added 'repeat order' to filter
+                    return status.includes('order') || status.includes('on hold') || status.includes('in fabrication') || status.includes('repeat order'); 
                 });
 
                 // Set data for the "All Quotation Data" table
@@ -1016,10 +1016,10 @@
                 document.getElementById('combinedLegend').querySelectorAll('.legend-item').forEach(item => item.remove()); // Clear legend on error
                 // Add error text to charts
                 const chartErrorText = "Error loading chart data.";
-                const svgWidth = 250, svgHeight = 250; // Use chart's expected dimensions
+                const svgWidth = 225, svgHeight = 225; // Use chart's expected dimensions
                 d3.select("#pendingChart").attr("width", svgWidth).attr("height", svgHeight).append("text").attr("x", svgWidth / 2).attr("y", svgHeight / 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle").attr("font-size", "0.9rem").attr("fill", "var(--color-text-dark)").text(chartErrorText);
                 d3.select("#orderChart").attr("width", svgWidth).attr("height", svgHeight).append("text").attr("x", svgWidth / 2).attr("y", svgHeight / 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle").attr("font-size", "0.9rem").attr("fill", "var(--color-text-dark)").text(chartErrorText);
-                d3.select("#allQuotationChart").attr("width", svgWidth).attr("height", svgHeight).append("text").attr("x", svgWidth / 2).attr("y", svgHeight / 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle").attr("font-size", "0.9rem").attr("fill", "var(--color-text-dark)").text(chartErrorText);
+                d3.select("#allQuotationChart").attr("width", svgWidth).attr("height", svgHeight).append("text").attr("x", svgWidth / 2).attr("y", svgWidth / 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle").attr("font-size", "0.9rem").attr("fill", "var(--color-text-dark)").text(chartErrorText);
             }
         }
 
