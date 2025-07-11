@@ -34,6 +34,7 @@
             --color-status-for-checking: #8E44AD; /* Medium purple for For Checking */
             --color-status-for-shop-drawing: #FFB300; /* Swapped with Pending: Stronger amber for For Shop Drawing */
             --color-status-for-revision: #FF7043; /* Slightly deeper coral for For Revision */
+            --color-status-repeat-order: #9B59B6; /* New: Muted purple for Repeat Order */
         }
 
         body {
@@ -151,6 +152,7 @@
         .status-for-checking { color: var(--color-status-for-checking); }
         .status-for-shop-drawing { color: var(--color-status-for-shop-drawing); }
         .status-for-revision { color: var(--color-status-for-revision); }
+        .status-repeat-order { color: var(--color-status-repeat-order); } /* New status class */
 
         /* New wrapper for charts and legend to share background */
         .charts-and-legend-wrapper {
@@ -368,7 +370,7 @@
                             <tr>
                                 <th class="rounded-tl-lg">Client</th>
                                 <th>Quote #</th>
-                                <th>Date Ordered</th>
+                                <!-- Removed "Date Ordered" column -->
                                 <th>Status</th>
                                 <th class="rounded-tr-lg">Fabricator</th>
                             </tr>
@@ -376,7 +378,7 @@
                         <tbody>
                             <!-- Data will be loaded here by JavaScript -->
                             <tr>
-                                <td colspan="5" class="text-center py-8 text-gray-500">Loading data...</td>
+                                <td colspan="4" class="text-center py-8 text-gray-500">Loading data...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -446,14 +448,29 @@
 
     <script>
         // Define the Google Sheet CSV URL (declared once here, at the very top of the script)
-        // IMPORTANT: Please replace this with the *correct* public CSV URL of your Google Sheet.
-        // To get this URL:
-        // 1. Open your Google Sheet.
+        // **********************************************************************************************************************
+        // **********************************************************************************************************************
+        // IMPORTANT: You are getting "Failed to parse URL" and "404 Not Found" errors because the CSV_URL below is a placeholder.
+        // YOU MUST REPLACE 'YOUR_PUBLIC_GOOGLE_SHEET_CSV_URL_HERE' with the *correct*, publicly published CSV URL of YOUR Google Sheet.
+        //
+        // To get YOUR correct URL:
+        // 1. Open your Google Sheet that contains the data.
         // 2. Go to File > Share > Publish to web.
-        // 3. In the "Link" tab, choose the sheet you want to publish and select "Comma-separated values (.csv)" for "Publish as".
-        // 4. Copy the generated URL. It should look similar to:
+        // 3. In the "Link" tab, ensure you select the **specific sheet** you want to publish (e.g., "Sheet1").
+        //    Make sure it's the sheet containing the data you want to display.
+        // 4. For the "Publish as" option, select **"Comma-separated values (.csv)"**.
+        // 5. Click the `Publish` button if it's not already published. If it is, you might need to
+        //    stop publishing and then republish to ensure the latest version is available.
+        // 6. **Copy the generated URL.** It should look similar to this example:
         //    "https://docs.google.com/spreadsheets/d/e/{YOUR_SHEET_ID}/pub?gid={YOUR_GID}&single=true&output=csv"
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdxuPA2X-NQsefXyePu_KGoL45yPAgqXC0ixlx0_eYnUySW_gjJgC8I3pZJJ29nflciSVXL7M-YUbm/pub?gid=1383182578&single=true&output=csv';
+        //    Note: {YOUR_SHEET_ID} and {YOUR_GID} will be unique to your sheet.
+        // 7. **Replace the CSV_URL below with your newly copied URL.**
+        //
+        // Example of a valid publicly accessible Google Sheet CSV URL (for demonstration if you don't have your own):
+        // const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdxuPA2X-NQsefXyePu_KGoL45yPAgqXC0ixlx0_eYnUySW_gjJgC8I3pZJJ29nflciSVXL7M-YUbm/pub?gid=1383182578&single=true&output=csv';
+        // **********************************************************************************************************************
+        // **********************************************************************************************************************
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdxuPA2X-NQsefXyePu_KGoL45yPAgqXC0ixlx0_eYnUySW_gjJgC8I3pZJJ29nflciSVXL7M-YUbm/pub?gid=1383182578&single=true&output=csv'; 
 
         // --- Global Variable Declarations ---
         // These variables are declared only once here to avoid "already been declared" errors.
@@ -467,7 +484,7 @@
         const ORDER_STATUS_COLUMNS = [
             { header: "Client", key: "Client" },
             { header: "Quote #", key: "Quote#" },
-            { header: "Date Ordered", key: "Date Ordered" },
+            // Removed "Date Ordered" column as requested
             { header: "Status", key: "Status" },
             { header: "Fabricator", key: "Fabricator" }
         ];
@@ -499,6 +516,23 @@
         // Minimum angle (in radians) for a slice to display a label
         // A full circle is 2 * Math.PI radians. 0.1 radians is roughly 5.7 degrees.
         const MIN_SLICE_ANGLE_FOR_LABEL = 0.1; 
+
+        // Define all possible status types for the legend
+        const ALL_POSSIBLE_STATUSES = [
+            'Completed',
+            'Pending',
+            'In Progress',
+            'In Fabrication',
+            'On Hold',
+            'Order',
+            'Repeat Order', // Added "Repeat Order"
+            'For Checking',
+            'For Shop Drawing',
+            'For Revision',
+            'Cancelled',
+            'Rejected',
+            'Unknown' // Include 'Unknown' for data that doesn't match a known status
+        ];
 
 
         // --- Function Definitions ---
@@ -612,6 +646,8 @@
                             cell.classList.add('status-on-hold');
                         } else if (statusLower.includes('order')) {
                             cell.classList.add('status-order');
+                        } else if (statusLower.includes('repeat order')) { // New status check
+                            cell.classList.add('status-repeat-order');
                         } else if (statusLower.includes('cancelled') || statusLower.includes('rejected')) {
                             cell.classList.add('status-cancelled');
                         }
@@ -789,7 +825,7 @@
                 .domain([
                     'completed', 'pending', 'in progress', 'for checking',
                     'for shop drawing', 'for revision', 'in fabrication',
-                    'on hold', 'order', 'cancelled', 'rejected', 'unknown' // Ensure 'unknown' is in domain
+                    'on hold', 'order', 'repeat order', 'cancelled', 'rejected', 'unknown' // Added 'repeat order' to domain
                 ])
                 .range([
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-completed').trim(),
@@ -801,6 +837,7 @@
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-in-fabrication').trim(),
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-on-hold').trim(),
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-order').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-status-repeat-order').trim(), // Added color for repeat order
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-cancelled').trim(),
                     getComputedStyle(document.documentElement).getPropertyValue('--color-status-cancelled').trim(), // Rejected uses same as cancelled
                     '#cccccc' // Default for unknown
@@ -870,15 +907,16 @@
                 'in fabrication': rootStyles.getPropertyValue('--color-status-in-fabrication').trim(),
                 'on hold': rootStyles.getPropertyValue('--color-status-on-hold').trim(),
                 'order': rootStyles.getPropertyValue('--color-status-order').trim(),
+                'repeat order': rootStyles.getPropertyValue('--color-status-repeat-order').trim(), // Added color for repeat order
                 'cancelled': rootStyles.getPropertyValue('--color-status-cancelled').trim(),
                 'rejected': rootStyles.getPropertyValue('--color-status-cancelled').trim(), // Rejected uses same as cancelled
                 'unknown': '#cccccc' // Default for unknown
             };
 
-            // Sort statuses alphabetically for consistent legend order
-            const sortedStatuses = [...new Set(allStatuses)].sort((a, b) => a.localeCompare(b));
+            // Use the predefined ALL_POSSIBLE_STATUSES for the legend
+            const statusesToDisplay = ALL_POSSIBLE_STATUSES.sort((a, b) => a.localeCompare(b));
 
-            sortedStatuses.forEach(status => {
+            statusesToDisplay.forEach(status => {
                 const statusLower = status.toLowerCase();
                 const color = statusColorMap[statusLower] || statusColorMap['unknown'];
 
@@ -935,7 +973,7 @@
                 // Filter data for the "Order Status" table to only show "Order", "On Hold", "In Fabrication"
                 orderTableState.data = parsedData.filter(row => {
                     const status = row.Status ? row.Status.toLowerCase() : '';
-                    return status.includes('order') || status.includes('on hold') || status.includes('in fabrication');
+                    return status.includes('order') || status.includes('on hold') || status.includes('in fabrication') || status.includes('repeat order'); // Added 'repeat order' to filter
                 });
 
                 // Set data for the "All Quotation Data" table
@@ -959,20 +997,8 @@
                 // Pass true for countCompletedOnly to the allQuotationChart
                 drawDonutChart('allQuotationChart', allQuotationChartData, true); 
 
-                // Collect all unique statuses from all data sets for the combined legend
-                const allUniqueStatuses = new Set();
-                parsedData.forEach(row => {
-                    if (row.Status) allUniqueStatuses.add(row.Status);
-                });
-                // Add statuses from filtered data as well, in case some are only in filtered sets
-                pendingTableState.data.forEach(row => {
-                    if (row.Status) allUniqueStatuses.add(row.Status);
-                });
-                orderTableState.data.forEach(row => {
-                    if (row.Status) allUniqueStatuses.add(row.Status);
-                });
-
-                createCombinedLegend(Array.from(allUniqueStatuses));
+                // Now call createCombinedLegend with the comprehensive list of all possible statuses
+                createCombinedLegend(ALL_POSSIBLE_STATUSES);
 
 
             } catch (error) {
@@ -980,7 +1006,7 @@
                 pendingQuotationTableBody.innerHTML = `<tr><td colspan="${PENDING_COLUMNS.length}" class="text-center py-8 text-red-400">Failed to load data.</td></tr>`;
                 orderStatusTableBody.innerHTML = `<tr><td colspan="${ORDER_STATUS_COLUMNS.length}" class="text-center py-8 text-red-400">Failed to load data.</td></tr>`;
                 allQuotationTableBody.innerHTML = `<tr><td colspan="${ALL_QUOTATION_COLUMNS.length}" class="text-center py-8 text-red-400">Failed to load data. Please check the source.</td></tr>`;
-                errorMessageDiv.textContent = `Error: ${error.message}. Please ensure the Google Sheet is publicly accessible and the URL is correct.`;
+                errorMessageDiv.textContent = `Error: ${error.message}. Please ensure the Google Sheet is publicly accessible and the URL is correct. Check the console for the exact URL being fetched.`;
                 errorMessageDiv.classList.remove('hidden');
 
                 // Clear charts on error
